@@ -19,12 +19,21 @@ ALLOWED_HOSTS = [
     "vidyaniketan-app-main-f58e2f6.kuberns.cloud",
 ]
 
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
+
+CSRF_COOKIE_SAMESITE = "None"
+SESSION_COOKIE_SAMESITE = "None"
+
 CSRF_TRUSTED_ORIGINS = [
     "https://vidyaniketan-app-main-f58e2f6.kuberns.cloud",
+    "http://vidyaniketan-app-main-f58e2f6.kuberns.cloud",
 ]
 
 # IMPORTANT for Kubernetes / reverse proxy (CSRF fix)
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = True
+SECURE_SSL_REDIRECT = False
 
 # ----------------------------
 # APPLICATIONS
