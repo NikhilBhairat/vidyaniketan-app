@@ -1,0 +1,25 @@
+name: vidyaniketan_app
+description: A full-stack educational app for student/parent engagement.
+publish_to: none
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  provider: ^6.0.6
+  dio: ^5.9.2
+  hive_flutter: ^1.1.0
+  fl_chart: ^0.60.0
+  # firebase_core: ^2.18.0
+  # firebase_messaging: ^14.6.0
+  url_launcher: ^6.3.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true

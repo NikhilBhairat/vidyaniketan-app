@@ -1,0 +1,487 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block extrahead %}
+{{ block.super }}
+<style>
+    :root {
+        --admin-primary: #1A237E;
+        --admin-primary-light: #3F51B5;
+        --admin-primary-dark: #0D1B4F;
+        --admin-accent: #FF6F00;
+        --admin-accent-light: #FFB74D;
+        --admin-success: #4CAF50;
+        --admin-warning: #FFC107;
+        --admin-danger: #F44336;
+        --admin-info: #2196F3;
+        --admin-text-primary: #212121;
+        --admin-text-secondary: #757575;
+        --admin-bg-primary: #FFFFFF;
+        --admin-bg-secondary: #F5F5F5;
+        --admin-border: #E0E0E0;
+    }
+
+    /* Header Styling */
+    #header {
+        background-color: var(--admin-primary) !important;
+        background: linear-gradient(135deg, var(--admin-primary) 0%, #0D1B4F 100%) !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        padding: 15px 20px;
+        border-radius: 0;
+    }
+
+    #header h1, #header h1 a, #header h1 a:visited {
+        color: white !important;
+        font-weight: 600;
+        font-size: 22px;
+        letter-spacing: 0.5px;
+    }
+
+    #header h1 a:hover {
+        color: var(--admin-accent-light) !important;
+        text-decoration: none;
+    }
+
+    #branding {
+        padding: 0;
+    }
+
+    #branding h1 {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    /* User Info */
+    #user-tools {
+        background-color: rgba(255, 255, 255, 0.1);
+        padding: 8px 20px;
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.9);
+    }
+
+    #user-tools a {
+        color: var(--admin-accent-light);
+        text-decoration: none;
+    }
+
+    #user-tools a:hover {
+        color: var(--admin-accent);
+    }
+
+    /* Navigation */
+    #nav-global {
+        background-color: var(--admin-primary-dark);
+        border-bottom: 3px solid var(--admin-accent);
+        padding: 0;
+    }
+
+    #nav-global li a {
+        color: rgba(255, 255, 255, 0.8);
+        padding: 12px 20px;
+        transition: all 0.3s ease;
+        border-bottom: 3px solid transparent;
+        margin-bottom: -3px;
+    }
+
+    #nav-global li a:hover {
+        background-color: var(--admin-primary);
+        color: white;
+        border-bottom-color: var(--admin-accent);
+    }
+
+    #nav-global li.active a {
+        background-color: var(--admin-primary);
+        color: white;
+        border-bottom-color: var(--admin-accent);
+    }
+
+    /* Content */
+    #content {
+        background-color: var(--admin-bg-secondary);
+        padding: 20px;
+    }
+
+    #container {
+        background-color: transparent;
+    }
+
+    /* Sidebar */
+    #nav-sidebar {
+        background-color: var(--admin-bg-secondary);
+        border: 1px solid var(--admin-border);
+        border-radius: 4px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    #nav-sidebar > div > h2 {
+        background-color: var(--admin-primary);
+        color: white;
+        padding: 12px 15px;
+        margin: 0;
+        border-radius: 4px 4px 0 0;
+    }
+
+    #nav-sidebar ul li a {
+        color: var(--admin-text-primary);
+        padding: 10px 15px;
+        display: block;
+        border-left: 3px solid transparent;
+        transition: all 0.3s ease;
+    }
+
+    #nav-sidebar ul li a:hover {
+        background-color: var(--admin-accent);
+        color: white;
+        border-left-color: var(--admin-accent);
+        padding-left: 20px;
+    }
+
+    #nav-sidebar ul li.selected a {
+        background-color: var(--admin-primary);
+        color: white;
+        border-left-color: var(--admin-accent);
+    }
+
+    /* Buttons */
+    .button, input[type="submit"], a.button {
+        background-color: var(--admin-primary) !important;
+        background: linear-gradient(135deg, var(--admin-primary) 0%, #0D1B4F 100%) !important;
+        color: white !important;
+        border: none;
+        border-radius: 4px;
+        padding: 10px 20px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-weight: 500;
+        font-size: 13px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .button:hover, input[type="submit"]:hover, a.button:hover {
+        background-color: #0D1B4F !important;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        transform: translateY(-1px);
+    }
+
+    .button:active, input[type="submit"]:active, a.button:active {
+        transform: translateY(0);
+    }
+
+    /* Submit Button Row */
+    .submit-row {
+        padding: 20px 15px;
+        background-color: var(--admin-bg-secondary);
+        border-top: 1px solid var(--admin-border);
+        border-radius: 0 0 4px 4px;
+    }
+
+    /* Success/Delete Buttons */
+    .button.default {
+        background-color: var(--admin-success) !important;
+    }
+
+    .button.default:hover {
+        background-color: #2e7d32 !important;
+    }
+
+    .button.delete-link {
+        background-color: var(--admin-danger) !important;
+    }
+
+    .button.delete-link:hover {
+        background-color: #c62828 !important;
+    }
+
+    /* Forms */
+    fieldset {
+        border: 1px solid var(--admin-border);
+        border-radius: 4px;
+        background-color: var(--admin-bg-primary);
+        padding: 0;
+        margin: 0 0 20px 0;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    fieldset h2 {
+        color: white;
+        background-color: var(--admin-primary);
+        padding: 12px 15px;
+        margin: 0;
+        border-radius: 4px 4px 0 0;
+        border: none;
+        font-size: 16px;
+    }
+
+    fieldset h3 {
+        color: var(--admin-primary);
+        padding: 15px;
+        margin: 15px 0 10px 0;
+        border-bottom: 2px solid var(--admin-border);
+        font-size: 14px;
+    }
+
+    .form-row {
+        padding: 10px 15px;
+        background-color: var(--admin-bg-primary);
+        border-bottom: 1px solid var(--admin-border);
+    }
+
+    .form-row:last-child {
+        border-bottom: none;
+    }
+
+    input[type="text"], input[type="email"], input[type="password"], 
+    input[type="number"], textarea, select {
+        border: 1px solid var(--admin-border);
+        border-radius: 4px;
+        padding: 8px 12px;
+        font-size: 13px;
+        transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        font-family: inherit;
+    }
+
+    input[type="text"]:focus, input[type="email"]:focus, input[type="password"]:focus,
+    input[type="number"]:focus, textarea:focus, select:focus {
+        border-color: var(--admin-primary) !important;
+        outline: none;
+        box-shadow: 0 0 5px rgba(26, 35, 126, 0.2) !important;
+    }
+
+    /* Table Styling */
+    table {
+        border-collapse: collapse;
+        background-color: var(--admin-bg-primary);
+        border: 1px solid var(--admin-border);
+        border-radius: 4px;
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    table thead {
+        background: linear-gradient(135deg, var(--admin-primary) 0%, #0D1B4F 100%);
+    }
+
+    table thead th {
+        color: white;
+        padding: 12px 15px;
+        text-align: left;
+        font-weight: 600;
+        border: none;
+        font-size: 13px;
+    }
+
+    table tbody tr {
+        border-bottom: 1px solid var(--admin-border);
+        transition: background-color 0.2s ease;
+    }
+
+    table tbody tr:hover {
+        background-color: var(--admin-bg-secondary);
+    }
+
+    table tbody tr:nth-child(even) {
+        background-color: rgba(0, 0, 0, 0.01);
+    }
+
+    table td {
+        padding: 12px 15px;
+        border: none;
+        font-size: 13px;
+    }
+
+    /* Messages */
+    .messagelist {
+        margin: 10px 0 20px 0;
+    }
+
+    .messagelist li {
+        padding: 12px 15px;
+        border-radius: 4px;
+        margin-bottom: 8px;
+        border-left: 4px solid;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .messagelist .success {
+        background-color: #E8F5E9;
+        border-left-color: var(--admin-success);
+        color: #1B5E20;
+    }
+
+    .messagelist .error {
+        background-color: #FFEBEE;
+        border-left-color: var(--admin-danger);
+        color: #B71C1C;
+    }
+
+    .messagelist .warning {
+        background-color: #FFF3E0;
+        border-left-color: var(--admin-warning);
+        color: #E65100;
+    }
+
+    .messagelist .info {
+        background-color: #E3F2FD;
+        border-left-color: var(--admin-info);
+        color: #01579B;
+    }
+
+    /* Dashboard Cards */
+    .dashboard > div {
+        background-color: var(--admin-bg-primary);
+        border: 1px solid var(--admin-border);
+        border-radius: 4px;
+        padding: 15px;
+        margin-bottom: 15px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .dashboard > div h2 {
+        color: var(--admin-primary);
+        border-bottom: 2px solid var(--admin-primary);
+        padding-bottom: 10px;
+        margin-bottom: 15px;
+    }
+
+    .dashboard > div table {
+        width: 100%;
+    }
+
+    /* Pagination */
+    .pagination {
+        display: flex;
+        gap: 5px;
+        margin: 20px 0;
+        justify-content: center;
+    }
+
+    .pagination a, .pagination span {
+        padding: 8px 12px;
+        border: 1px solid var(--admin-border);
+        border-radius: 4px;
+        color: var(--admin-primary);
+        background-color: var(--admin-bg-primary);
+        text-decoration: none;
+        transition: all 0.3s ease;
+        font-size: 13px;
+    }
+
+    .pagination a:hover {
+        background-color: var(--admin-primary);
+        color: white;
+        border-color: var(--admin-primary);
+    }
+
+    .pagination .this-page {
+        background-color: var(--admin-primary);
+        color: white;
+        border-color: var(--admin-primary);
+        cursor: default;
+    }
+
+    /* Links */
+    a {
+        color: var(--admin-primary);
+    }
+
+    a:visited {
+        color: var(--admin-primary-dark);
+    }
+
+    a:hover {
+        color: var(--admin-accent);
+    }
+
+    /* Help text */
+    p.help, .help-text {
+        color: var(--admin-text-secondary);
+        font-size: 12px;
+        margin-top: 5px;
+        font-style: italic;
+    }
+
+    /* Errors */
+    .errorlist {
+        color: var(--admin-danger);
+        padding: 10px 15px;
+        background-color: #FFEBEE;
+        border: 1px solid var(--admin-danger);
+        border-radius: 4px;
+        margin-bottom: 10px;
+        list-style: none;
+    }
+
+    .errorlist li {
+        margin: 5px 0;
+    }
+
+    .fieldWrapper.errors input {
+        border-color: var(--admin-danger) !important;
+    }
+
+    /* Footer */
+    #footer {
+        background-color: var(--admin-primary);
+        color: white;
+        padding: 15px 20px;
+        font-size: 12px;
+        text-align: center;
+        margin-top: 40px;
+    }
+
+    #footer a {
+        color: var(--admin-accent-light);
+        text-decoration: none;
+    }
+
+    #footer a:hover {
+        color: var(--admin-accent);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        #header {
+            padding: 10px;
+        }
+
+        #header h1 {
+            font-size: 18px;
+        }
+
+        #user-tools {
+            padding: 6px 10px;
+            font-size: 12px;
+        }
+
+        .button, input[type="submit"], a.button {
+            padding: 8px 15px;
+            font-size: 12px;
+        }
+
+        table {
+            font-size: 12px;
+        }
+
+        table td, table th {
+            padding: 8px 10px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block title %}{{ block.super }} - Vidyaniketan Admin{% endblock %}
+
+{% block branding %}
+<div id="branding">
+    <h1>
+        <a href="{% url 'admin:index' %}">
+            📚 {{ site_header }}
+        </a>
+    </h1>
+</div>
+{% endblock %}
+
+{% block footer %}
+<div id="footer">
+    <p>&copy; 2024 Vidyaniketan Classes & Academy. All rights reserved. | Powered by Django</p>
+</div>
+{% endblock %}
