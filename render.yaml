@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: vidyaniketan-backend
+    env: python
+    rootDir: Backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn project.wsgi:application
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11
+      - key: DEBUG
+        value: False
