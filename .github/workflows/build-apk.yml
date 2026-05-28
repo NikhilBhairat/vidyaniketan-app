@@ -35,7 +35,7 @@ jobs:
         flutter build apk --release
 
     - name: Upload APK
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: vidyaniketan-app
         path: Frontend/build/app/outputs/apk/release/app-release.apk
