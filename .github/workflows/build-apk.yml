@@ -29,7 +29,7 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          cd frontend
+          cd Frontend
           flutter pub get
 
       - name: Verify Flutter Installation
@@ -37,20 +37,20 @@ jobs:
 
       - name: Build Release APK
         run: |
-          cd frontend
+          cd Frontend
           flutter build apk --release
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: vidyaniketan-app
-          path: frontend/build/app/outputs/flutter-apk/app-release.apk
+          path: Frontend/build/app/outputs/flutter-apk/app-release.apk
           retention-days: 30
 
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: frontend/build/app/outputs/flutter-apk/app-release.apk
+          files: Frontend/build/app/outputs/flutter-apk/app-release.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
