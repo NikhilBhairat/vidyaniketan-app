@@ -29,8 +29,16 @@ SECRET_KEY = os.environ.get("SECRET_KEY", "django-insecure-&-kgn1n*3a0ohpaz!1r7&
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get("DEBUG", "True").lower() in ("true", "1", "yes")
 
-ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "*").split(",") if os.environ.get("ALLOWED_HOSTS") else ["*"]
+CSRF_TRUSTED_ORIGINS = [
+    "https://vidyaniketan-app-main-f58e2f6.kuberns.cloud",
+]
 
+# ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "*").split(",") if os.environ.get("ALLOWED_HOSTS") else ["*"]
+ALLOWED_HOSTS = [
+    "vidyaniketan-app-main-f58e2f6.kuberns.cloud",
+]
+
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # Application definition
 
