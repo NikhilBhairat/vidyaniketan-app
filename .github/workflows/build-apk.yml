@@ -28,9 +28,8 @@ jobs:
           channel: 'stable'
 
       - name: Install Dependencies
-        run: |
-          cd Frontend
-          flutter pub get
+        working-directory: Frontend
+        run: flutter pub get
 
       - name: Verify Flutter Installation
         run: flutter doctor
