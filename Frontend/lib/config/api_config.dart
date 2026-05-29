@@ -1,49 +1,104 @@
-/// API Configuration
-/// This file contains all API endpoint configurations
+/// API Configuration with multiple fallback URLs
+/// This file contains all API endpoint configurations with support for multiple environments
 class ApiConfig {
-  // Base URL of the backend server
-  static const String baseUrl = 'https://vidyaniketan-app-main-f58e2f6.kuberns.cloud';
+  // Primary URL - Production Kubernetes
+  static const String _productionUrl = 'https://vidyaniketan-app-main-f58e2f6.kuberns.cloud';
+  
+  // Fallback URLs for local development
+  static const String _localhostUrl = 'http://localhost:8000';
+  static const String _localIpUrl = 'http://192.168.1.100:8000';  // Change to your machine IP
+  static const String _emulatorUrl = 'http://10.0.2.2:8000';      // Android emulator
+  
+  // Use this to switch environments
+  // Change to _localhostUrl, _localIpUrl, or _emulatorUrl for testing
+  static const String baseUrl = _productionUrl;
+  
+  // For easy switching between environments
+  static const bool USE_LOCAL_BACKEND = false;  // Set to true for local testing
+  
+  static String getBaseUrl() {
+    if (USE_LOCAL_BACKEND) {
+      return _localhostUrl;  // Change this to _localIpUrl or _emulatorUrl as needed
+    }
+    return baseUrl;
+  }
   
   // API version
   static const String apiVersion = '/api';
   
   // Complete API base URL
-  static const String apiBaseUrl = '$baseUrl$apiVersion';
+  static String get apiBaseUrl => '${getBaseUrl()}$apiVersion';
   
-  // API Endpoints
-  static const String adminEndpoint = '$baseUrl/admin';
+  // API Endpoints - Admin
+  static String get adminEndpoint => '${getBaseUrl()}/admin';
   
   // Auth Endpoints
-  static const String loginEndpoint = '$apiBaseUrl/login';
-  static const String registerEndpoint = '$apiBaseUrl/register';
-  static const String logoutEndpoint = '$apiBaseUrl/logout';
-  static const String profileEndpoint = '$apiBaseUrl/profile';
+  static String get loginEndpoint => '$apiBaseUrl/auth/login/';
+  static String get registerEndpoint => '$apiBaseUrl/auth/register/';
+  static String get logoutEndpoint => '$apiBaseUrl/auth/logout/';
+  static String get profileEndpoint => '$apiBaseUrl/auth/profile/';
+  static String get refreshTokenEndpoint => '$apiBaseUrl/auth/refresh/';
+  static String get fcmTokenEndpoint => '$apiBaseUrl/auth/fcm-token/';
   
   // Student Endpoints
-  static const String studentsEndpoint = '$apiBaseUrl/students';
-  static const String studentDetailsEndpoint = '$apiBaseUrl/students';
+  static String get studentsEndpoint => '$apiBaseUrl/students';
+  static String get studentDetailsEndpoint => '$apiBaseUrl/students';
+  static String get studentDashboardEndpoint => '$apiBaseUrl/student/dashboard/';
   
   // Parent Endpoints
-  static const String parentsEndpoint = '$apiBaseUrl/parents';
-  static const String parentDetailsEndpoint = '$apiBaseUrl/parents';
+  static String get parentsEndpoint => '$apiBaseUrl/parents';
+  static String get parentDetailsEndpoint => '$apiBaseUrl/parents';
   
   // Class Endpoints
-  static const String classesEndpoint = '$apiBaseUrl/classes';
+  static String get classesEndpoint => '$apiBaseUrl/classes';
   
   // Assignment Endpoints
-  static const String assignmentsEndpoint = '$apiBaseUrl/assignments';
+  static String get assignmentsEndpoint => '$apiBaseUrl/assignments';
   
   // Grade Endpoints
-  static const String gradesEndpoint = '$apiBaseUrl/grades';
+  static String get gradesEndpoint => '$apiBaseUrl/grades';
   
   // Attendance Endpoints
-  static const String attendanceEndpoint = '$apiBaseUrl/attendance';
+  static String get attendanceEndpoint => '$apiBaseUrl/attendance';
+  static String get attendanceSummaryEndpoint => '$apiBaseUrl/attendance/summary/';
+  static String get attendanceMonthlyEndpoint => '$apiBaseUrl/attendance/monthly/';
+  
+  // Fees Endpoints
+  static String get feesEndpoint => '$apiBaseUrl/fees';
+  static String get feesSummaryEndpoint => '$apiBaseUrl/fees/summary/';
+  static String get receiptsEndpoint => '$apiBaseUrl/receipts/';
+  
+  // Exams & Marks Endpoints
+  static String get examsEndpoint => '$apiBaseUrl/exams';
+  static String get marksEndpoint => '$apiBaseUrl/marks';
+  static String get marksExamsEndpoint => '$apiBaseUrl/marks/exams/';
+  static String get marksResultEndpoint => '$apiBaseUrl/marks/result/';
+  static String get marksPerformanceEndpoint => '$apiBaseUrl/marks/performance/';
   
   // Notification Endpoints
-  static const String notificationsEndpoint = '$apiBaseUrl/notifications';
+  static String get notificationsEndpoint => '$apiBaseUrl/notifications';
+  static String get notificationUnreadCountEndpoint => '$apiBaseUrl/notifications/unread_count/';
+  
+  // Lectures & Gallery Endpoints
+  static String get lecturesEndpoint => '$apiBaseUrl/lectures';
+  static String get galleryEndpoint => '$apiBaseUrl/gallery';
+  static String get galleryCategoriesEndpoint => '$apiBaseUrl/gallery-categories/';
+  static String get questionPapersEndpoint => '$apiBaseUrl/question-papers';
+  
+  // Notes & Others Endpoints
+  static String get notesEndpoint => '$apiBaseUrl/notes/';
+  static String get dashboardStatsEndpoint => '$apiBaseUrl/dashboard/stats/';
   
   // Timeout duration in seconds
   static const int connectTimeout = 30;
   static const int receiveTimeout = 30;
   static const int sendTimeout = 30;
+  
+  // Retry configuration
+  static const int maxRetries = 3;
+  static const int retryDelay = 1000; // milliseconds
+  
+  // Additional configuration
+  static const bool enableLogging = true;
+  static const bool validateSSL = true;  // Set to false for local development with self-signed certs
 }
