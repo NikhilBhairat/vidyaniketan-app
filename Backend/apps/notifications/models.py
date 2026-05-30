@@ -34,7 +34,11 @@ class NotificationRead(models.Model):
     notification = models.ForeignKey(Notification, on_delete=models.CASCADE,
                                       related_name='read_by')
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    read_at = models.DateTimeField(auto_now_add=True)
+    read_at = models.DateTimeField(null=True, blank=True)  # ✅ FIXED: Removed auto_now_add
+    created_at = models.DateTimeField(auto_now_add=True)    # ✅ NEW: Track record creation time
 
     class Meta:
         unique_together = ('notification', 'user')
+
+    def __str__(self):
+        return f"{self.notification.title} - {self.user.mobile_number}"
