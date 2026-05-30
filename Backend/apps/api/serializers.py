@@ -71,14 +71,28 @@ class ParentSerializer(serializers.ModelSerializer):
 class StudentSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
     standard_display = serializers.CharField(source='get_standard_display', read_only=True)
+    profile_photo_url = serializers.SerializerMethodField()  # ✅ NEW: Cache-busting URL
 
     class Meta:
         model = Student
         fields = [
-            'id', 'student_id', 'full_name', 'standard', 'standard_display', 'profile_photo', 'date_of_birth', 'gender',
-            'blood_group', 'roll_number', 'mobile_number', 'school_name', 'address', 'admission_date', 
-            'receive_admin_alerts', 'is_active', 'user',
+            'id', 'student_id', 'full_name', 'standard', 'standard_display', 'profile_photo', 'profile_photo_url', 
+            'date_of_birth', 'gender', 'blood_group', 'roll_number', 'mobile_number', 'school_name', 'address', 
+            'admission_date', 'receive_admin_alerts', 'is_active', 'user',
         ]
+
+    def get_profile_photo_url(self, obj):
+        """Return absolute URL with cache-busting timestamp"""
+        if obj.profile_photo:
+            request = self.context.get('request')
+            if request:
+                url = request.build_absolute_uri(obj.profile_photo.url)
+                # Add timestamp to bust cache
+                from django.utils import timezone
+                timestamp = int(timezone.now().timestamp())
+                return f"{url}?t={timestamp}"
+            return obj.profile_photo.url
+        return None
 
 
 class AttendanceSerializer(serializers.ModelSerializer):
@@ -206,7 +220,8 @@ class NotificationSerializer(serializers.ModelSerializer):
     def get_is_read(self, obj):
         request = self.context.get('request')
         if request and request.user.is_authenticated:
-            return NotificationRead.objects.filter(notification=obj, user=request.user).exists()
+            # ✅ FIXED: Check if read_at is not None (actually marked as read)
+            return NotificationRead.objects.filter(notification=obj, user=request.user, read_at__isnull=False).exists()
         return False
 
 
@@ -216,11 +231,3 @@ class NoteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Note
         fields = ['id', 'student', 'title', 'content', 'is_important', 'created_at', 'updated_at']
-
-
-class FeeReceiptSerializer(serializers.ModelSerializer):
-    fee = FeeSerializer()
-
-    class Meta:
-        model = FeeReceipt
-        fields = ['id', 'receipt_number', 'fee', 'amount', 'payment_date', 'payment_mode', 'transaction_id', 'created_at']
