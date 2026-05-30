@@ -213,6 +213,13 @@ class StudentDashboardView(RetrieveUpdateAPIView):
             many=True,
         ).data
 
+        # ✅ NEW: Build cache-busting URL for profile photo
+        profile_photo_url = None
+        if student.profile_photo:
+            profile_photo_url = request.build_absolute_uri(student.profile_photo.url)
+            timestamp = int(timezone.now().timestamp())
+            profile_photo_url = f"{profile_photo_url}?t={timestamp}"
+
         data = {
             'id': student.id,
             'student_id': student.student_id,
@@ -220,7 +227,7 @@ class StudentDashboardView(RetrieveUpdateAPIView):
             'standard': student.standard,
             'standard_display': student.get_standard_display(),
             'school_name': student.school_name,
-            'profile_photo_url': request.build_absolute_uri(student.profile_photo.url) if student.profile_photo else None,
+            'profile_photo_url': profile_photo_url,
             'mobile_number': student.mobile_number,
             'date_of_birth': student.date_of_birth,
             'gender': student.gender,
@@ -356,11 +363,14 @@ class NotificationMarkReadView(RetrieveUpdateAPIView):
 
     def update(self, request, *args, **kwargs):
         notification = self.get_object()
-        NotificationRead.objects.get_or_create(
+        # ✅ FIXED: Set read_at when marking as read
+        notif_read, created = NotificationRead.objects.get_or_create(
             notification=notification,
             user=request.user,
-            defaults={'read_at': timezone.now()}
         )
+        if not notif_read.read_at:
+            notif_read.read_at = timezone.now()
+            notif_read.save()
         return Response({'status': 'marked as read'})
 
 
@@ -372,13 +382,18 @@ class NotificationMarkAllReadView(CreateAPIView):
         notifications = Notification.objects.filter(
             Q(audience='all') | Q(target_students__user=request.user)
         ).distinct()
+        count = 0
         for notification in notifications:
-            NotificationRead.objects.get_or_create(
+            # ✅ FIXED: Set read_at when marking as read
+            notif_read, created = NotificationRead.objects.get_or_create(
                 notification=notification,
                 user=request.user,
-                defaults={'read_at': timezone.now()}
             )
-        return Response({'status': 'all marked as read'})
+            if not notif_read.read_at:
+                notif_read.read_at = timezone.now()
+                notif_read.save()
+                count += 1
+        return Response({'status': 'all marked as read', 'count': count})
 
 
 class NotificationUnreadCountView(RetrieveAPIView):
@@ -386,6 +401,7 @@ class NotificationUnreadCountView(RetrieveAPIView):
     permission_classes = [IsAuthenticated]
 
     def retrieve(self, request, *args, **kwargs):
+        # ✅ FIXED: Count only notifications where read_at is NULL
         unread_count = NotificationRead.objects.filter(user=request.user, read_at__isnull=True).count()
         return Response({'unread_count': unread_count})
 
