@@ -17,17 +17,23 @@ DEBUG = os.environ.get("DEBUG", "False").lower() in ("true", "1", "yes")
 
 ALLOWED_HOSTS = [
     "vidyaniketan-app-main-f58e2f6.kuberns.cloud",
+    "127.0.0.1",
+    "localhost",
+    "10.0.2.2",  # For Android emulator
 ]
 
-CSRF_COOKIE_SECURE = True
-SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = False  # Allow HTTP in development
+SESSION_COOKIE_SECURE = False
 
-CSRF_COOKIE_SAMESITE = "None"
-SESSION_COOKIE_SAMESITE = "None"
+CSRF_COOKIE_SAMESITE = "Lax"
+SESSION_COOKIE_SAMESITE = "Lax"
 
 CSRF_TRUSTED_ORIGINS = [
     "https://vidyaniketan-app-main-f58e2f6.kuberns.cloud",
     "http://vidyaniketan-app-main-f58e2f6.kuberns.cloud",
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+    "http://10.0.2.2:8000",  # Android emulator
 ]
 
 # IMPORTANT for Kubernetes / reverse proxy (CSRF fix)

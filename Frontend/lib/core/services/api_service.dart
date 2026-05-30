@@ -13,9 +13,7 @@ class ApiException implements Exception {
 }
 
 class ApiService {
-  static final String baseUrl = kIsWeb
-      ? 'http://127.0.0.1:8000/api'
-      : 'http://10.0.2.2:8000/api';
+  static final String baseUrl = 'https://vidyaniketan-app-main-f58e2f6.kuberns.cloud/api';
   static late Dio _dio;
 
   static void init() {
