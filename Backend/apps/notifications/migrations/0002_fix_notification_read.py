@@ -1,23 +1,3 @@
-from django.db import migrations, models
-
-
-class Migration(migrations.Migration):
-
-    dependencies = [
-        ('notifications', '0001_initial'),
-    ]
-
-    operations = [
-        # Fix the read_at field to allow NULL values
-        migrations.AlterField(
-            model_name='notificationread',
-            name='read_at',
-            field=models.DateTimeField(null=True, blank=True),
-        ),
-        # Add created_at field to track when the record was created
-        migrations.AddField(
-            model_name='notificationread',
-            name='created_at',
-            field=models.DateTimeField(auto_now_add=True, null=True),
-        ),
-    ]
+# This file has been removed to resolve migration conflicts.
+# The functionality from this migration has been merged into 0003_fix_notification_read.py
+# Reference: https://github.com/NikhilBhairat/vidyaniketan-app/blob/main/Backend/apps/notifications/migrations/0003_fix_notification_read.py
