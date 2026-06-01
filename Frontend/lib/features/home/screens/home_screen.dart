@@ -790,9 +790,14 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   }
 }
 
-class NotificationsScreen extends StatelessWidget {
+class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
 
+  @override
+  State<NotificationsScreen> createState() => _NotificationsScreenState();
+}
+
+class _NotificationsScreenState extends State<NotificationsScreen> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<NotificationProvider>();
@@ -812,7 +817,16 @@ class NotificationsScreen extends StatelessWidget {
           ),
           IconButton(
             icon: const Icon(Icons.done_all),
-            onPressed: provider.unreadCount > 0 ? provider.markAllRead : null,
+            onPressed: provider.unreadCount > 0
+                ? () async {
+                    await provider.markAllRead();
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('All notifications marked as read')),
+                      );
+                    }
+                  }
+                : null,
           ),
           IconButton(
             icon: const Icon(Icons.logout),
@@ -832,12 +846,50 @@ class NotificationsScreen extends StatelessWidget {
                   itemBuilder: (context, index) {
                     final notification = provider.notifications[index];
                     final isRead = notification['is_read'] == true;
-                    return ListTile(
-                      title: Text(notification['title'] ?? ''),
-                      subtitle: Text(notification['message'] ?? ''),
-                      trailing: Icon(isRead ? Icons.check_circle : Icons.circle_notifications,
-                          color: isRead ? Colors.green : Colors.blue),
-                      onTap: () => provider.markRead(notification['id'] as int),
+                    return Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: isRead ? Colors.white : Colors.blue.withOpacity(0.05),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: isRead ? Colors.grey.withOpacity(0.3) : Colors.blue.withOpacity(0.3),
+                        ),
+                      ),
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        title: Text(
+                          notification['title'] ?? '',
+                          style: TextStyle(
+                            fontWeight: isRead ? FontWeight.normal : FontWeight.w600,
+                            color: isRead ? Colors.grey : Colors.black,
+                          ),
+                        ),
+                        subtitle: Text(
+                          notification['message'] ?? '',
+                          style: TextStyle(
+                            color: isRead ? Colors.grey : Colors.black87,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        trailing: Icon(
+                          isRead ? Icons.check_circle : Icons.circle_notifications,
+                          color: isRead ? Colors.green : Colors.blue,
+                        ),
+                        onTap: () async {
+                          if (!isRead) {
+                            await provider.markRead(notification['id'] as int);
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Notification marked as read'),
+                                  duration: Duration(seconds: 1),
+                                ),
+                              );
+                            }
+                          }
+                        },
+                      ),
                     );
                   },
                 ),
