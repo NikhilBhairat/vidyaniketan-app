@@ -1,0 +1,2 @@
+# Migration cleanup - conflicting files removed
+# Clean linear path: 0001_initial → 0002_delete_questionpaper → 0003_fix_notification_read
