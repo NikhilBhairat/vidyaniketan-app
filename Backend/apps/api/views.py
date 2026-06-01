@@ -32,7 +32,6 @@ from apps.api.serializers import (
     QuestionPaperSerializer,
     RegisterSerializer,
     RecordedLectureSerializer,
-
     StudentSerializer,
 )
 
@@ -148,7 +147,7 @@ class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
             Q(target_students__user=user)
         ).filter(is_sent=True).distinct()
         
-        # ✅ FIX: Auto-create NotificationRead records for new notifications
+        # ✅ Auto-create NotificationRead records for tracking
         for notification in queryset:
             NotificationRead.objects.get_or_create(
                 notification=notification,
@@ -168,8 +167,6 @@ class RecordedLectureViewSet(viewsets.ReadOnlyModelViewSet):
 
 class GalleryItemViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = GalleryItemSerializer
-    # authentication_classes = [JWTAuthentication]
-    # permission_classes = [IsAuthenticated]
     queryset = GalleryItem.objects.all()
 
 
@@ -179,8 +176,6 @@ class QuestionPaperViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [IsAuthenticated]
     queryset = QuestionPaper.objects.all()
 
-
-# ── Custom API Views for Flutter App ──────────────────────────────────────────
 
 class StudentDashboardView(RetrieveUpdateAPIView):
     authentication_classes = [JWTAuthentication]
@@ -196,7 +191,6 @@ class StudentDashboardView(RetrieveUpdateAPIView):
         except:
             return Response({'error': 'Student profile not found'}, status=status.HTTP_404_NOT_FOUND)
         
-        # Calculate quick stats
         attendance_stats = Attendance.objects.filter(student=student).aggregate(
             present_count=Count('id', filter=Q(status='P')),
             total_count=Count('id'),
@@ -208,7 +202,6 @@ class StudentDashboardView(RetrieveUpdateAPIView):
             remaining=Sum(ExpressionWrapper(F('total_fee') - F('amount_paid'), output_field=DecimalField()))
         )['remaining'] or 0
         
-        # ✅ FIX: Count only NotificationRead records with read_at NOT NULL
         unread_notifications = NotificationRead.objects.filter(user=request.user, read_at__isnull=True).count()
 
         recent_fees = FeeSerializer(
@@ -224,7 +217,6 @@ class StudentDashboardView(RetrieveUpdateAPIView):
             many=True,
         ).data
 
-        # ✅ NEW: Build cache-busting URL for profile photo
         profile_photo_url = None
         if student.profile_photo:
             profile_photo_url = request.build_absolute_uri(student.profile_photo.url)
@@ -361,8 +353,6 @@ class MarksPerformanceView(ListAPIView):
 
 
 class GalleryCategoriesView(ListAPIView):
-    # authentication_classes = [JWTAuthentication]
-    # permission_classes = [IsAuthenticated]
     serializer_class = GalleryCategorySerializer
     queryset = GalleryCategory.objects.all()
 
@@ -374,7 +364,6 @@ class NotificationMarkReadView(RetrieveUpdateAPIView):
 
     def update(self, request, *args, **kwargs):
         notification = self.get_object()
-        # ✅ FIXED: Set read_at when marking as read
         notif_read, created = NotificationRead.objects.get_or_create(
             notification=notification,
             user=request.user,
@@ -392,9 +381,7 @@ class NotificationMarkAllReadView(CreateAPIView):
     def create(self, request, *args, **kwargs):
         user = request.user
         
-        # ✅ FIX: Include ALL notification types - all, standard, and specific student
         if user.role == User.STUDENT and hasattr(user, 'student_profile'):
-            # Get all notifications for this student
             notifications = Notification.objects.filter(
                 Q(audience='all') | 
                 Q(audience='standard', target_standard=user.student_profile.standard) |
@@ -405,7 +392,6 @@ class NotificationMarkAllReadView(CreateAPIView):
         
         count = 0
         for notification in notifications:
-            # ✅ FIXED: Set read_at when marking as read
             notif_read, created = NotificationRead.objects.get_or_create(
                 notification=notification,
                 user=user,
@@ -427,11 +413,9 @@ class NotificationUnreadCountView(RetrieveAPIView):
     permission_classes = [IsAuthenticated]
 
     def retrieve(self, request, *args, **kwargs):
-        # ✅ FIXED: Count only notifications where read_at is NULL
         user = request.user
         
         if user.role == User.STUDENT and hasattr(user, 'student_profile'):
-            # Get unread count for student's notifications
             total_count = Notification.objects.filter(
                 Q(audience='all') | 
                 Q(audience='standard', target_standard=user.student_profile.standard) |
@@ -460,7 +444,6 @@ class NotificationUnreadCountView(RetrieveAPIView):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def logout_view(request):
-    # Invalidate tokens on server side if needed
     return Response({'status': 'logged out'})
 
 
@@ -472,6 +455,7 @@ def update_fcm_token_view(request):
         request.user.fcm_token = token
         request.user.save()
     return Response({'status': 'updated'})
+
 
 class NotesView(ListAPIView):
     authentication_classes = [JWTAuthentication]
