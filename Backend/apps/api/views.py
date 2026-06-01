@@ -147,6 +147,15 @@ class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
             Q(audience='standard', target_standard=user.student_profile.standard) |
             Q(target_students__user=user)
         ).filter(is_sent=True).distinct()
+        
+        # ✅ FIX: Auto-create NotificationRead records for new notifications
+        for notification in queryset:
+            NotificationRead.objects.get_or_create(
+                notification=notification,
+                user=user,
+                defaults={'read_at': None}
+            )
+        
         return queryset
 
 
@@ -198,6 +207,8 @@ class StudentDashboardView(RetrieveUpdateAPIView):
         unpaid_fees_balance = Fee.objects.filter(student=student).aggregate(
             remaining=Sum(ExpressionWrapper(F('total_fee') - F('amount_paid'), output_field=DecimalField()))
         )['remaining'] or 0
+        
+        # ✅ FIX: Count only NotificationRead records with read_at NOT NULL
         unread_notifications = NotificationRead.objects.filter(user=request.user, read_at__isnull=True).count()
 
         recent_fees = FeeSerializer(
@@ -371,7 +382,7 @@ class NotificationMarkReadView(RetrieveUpdateAPIView):
         if not notif_read.read_at:
             notif_read.read_at = timezone.now()
             notif_read.save()
-        return Response({'status': 'marked as read'})
+        return Response({'status': 'marked as read', 'notification_id': notification.id})
 
 
 class NotificationMarkAllReadView(CreateAPIView):
@@ -379,21 +390,36 @@ class NotificationMarkAllReadView(CreateAPIView):
     permission_classes = [IsAuthenticated]
 
     def create(self, request, *args, **kwargs):
-        notifications = Notification.objects.filter(
-            Q(audience='all') | Q(target_students__user=request.user)
-        ).distinct()
+        user = request.user
+        
+        # ✅ FIX: Include ALL notification types - all, standard, and specific student
+        if user.role == User.STUDENT and hasattr(user, 'student_profile'):
+            # Get all notifications for this student
+            notifications = Notification.objects.filter(
+                Q(audience='all') | 
+                Q(audience='standard', target_standard=user.student_profile.standard) |
+                Q(target_students__user=user)
+            ).filter(is_sent=True).distinct()
+        else:
+            notifications = Notification.objects.filter(is_sent=True)
+        
         count = 0
         for notification in notifications:
             # ✅ FIXED: Set read_at when marking as read
             notif_read, created = NotificationRead.objects.get_or_create(
                 notification=notification,
-                user=request.user,
+                user=user,
             )
             if not notif_read.read_at:
                 notif_read.read_at = timezone.now()
                 notif_read.save()
                 count += 1
-        return Response({'status': 'all marked as read', 'count': count})
+        
+        return Response({
+            'status': 'all marked as read', 
+            'count': count,
+            'total_notifications': notifications.count()
+        })
 
 
 class NotificationUnreadCountView(RetrieveAPIView):
@@ -402,8 +428,33 @@ class NotificationUnreadCountView(RetrieveAPIView):
 
     def retrieve(self, request, *args, **kwargs):
         # ✅ FIXED: Count only notifications where read_at is NULL
-        unread_count = NotificationRead.objects.filter(user=request.user, read_at__isnull=True).count()
-        return Response({'unread_count': unread_count})
+        user = request.user
+        
+        if user.role == User.STUDENT and hasattr(user, 'student_profile'):
+            # Get unread count for student's notifications
+            total_count = Notification.objects.filter(
+                Q(audience='all') | 
+                Q(audience='standard', target_standard=user.student_profile.standard) |
+                Q(target_students__user=user),
+                is_sent=True
+            ).distinct().count()
+            
+            unread_count = NotificationRead.objects.filter(
+                user=user,
+                read_at__isnull=True,
+                notification__is_sent=True
+            ).count()
+        else:
+            total_count = Notification.objects.filter(is_sent=True).count()
+            unread_count = NotificationRead.objects.filter(
+                user=user,
+                read_at__isnull=True
+            ).count()
+        
+        return Response({
+            'unread_count': unread_count,
+            'total_count': total_count
+        })
 
 
 @api_view(['POST'])
