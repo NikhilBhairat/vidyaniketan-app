@@ -5,15 +5,19 @@ from project.admin_site import vidyaniketan_admin_site
 
 
 class NoteAdmin(admin.ModelAdmin):
-    list_display = ['id', 'student', 'title', 'importance_badge', 'created_at', 'truncated_content']
-    search_fields = ['student__full_name', 'title', 'content']
-    list_filter = ['is_important', 'created_at']
+    list_display = ['id', 'title', 'standard', 'subject', 'chapter', 'has_pdf', 'importance_badge', 'created_at']
+    search_fields = ['title', 'content', 'subject', 'chapter', 'standard']
+    list_filter = ['is_important', 'standard', 'subject', 'created_at']
     ordering = ['-created_at']
     list_per_page = 20
 
     fieldsets = (
-        ('Note Information', {
-            'fields': ('student', 'title', 'content'),
+        ('Hierarchy', {
+            'fields': ('standard', 'subject', 'chapter'),
+            'classes': ('wide',),
+        }),
+        ('Chapter-wise Note Information', {
+            'fields': ('pdf_file',),
             'classes': ('wide',),
         }),
         ('Settings', {
@@ -35,11 +39,10 @@ class NoteAdmin(admin.ModelAdmin):
         return obj.content
     truncated_content.short_description = 'Content'
 
-    class Media:
-        css = {
-            'all': ('admin/css/custom_admin.css',)
-        }
-
+    def has_pdf(self, obj):
+        return bool(obj.pdf_file)
+    has_pdf.boolean = True
+    has_pdf.short_description = 'PDF'
 
 class QuestionPaperAdmin(admin.ModelAdmin):
     list_display = ['id', 'title', 'subject', 'standard', 'exam_type', 'year', 'uploaded_at']
@@ -47,12 +50,6 @@ class QuestionPaperAdmin(admin.ModelAdmin):
     list_filter = ['exam_type', 'standard', 'year']
     ordering = ['-uploaded_at']
     list_per_page = 20
-
-    class Media:
-        css = {
-            'all': ('admin/css/custom_admin.css',)
-        }
-
 
 # Register with custom admin site
 vidyaniketan_admin_site.register(Note, NoteAdmin)

@@ -11,6 +11,7 @@ import 'features/home/screens/gallery_screen.dart';
 import 'features/home/screens/fees_screen.dart';
 import 'features/home/screens/home_screen.dart';
 import 'features/home/screens/notes_screen.dart';
+import 'features/home/screens/question_papers_screen.dart';
 import 'features/home/screens/receipt_screen.dart';
 import 'features/home/screens/results_screen.dart';
 import 'features/splash/splash_screen.dart';
@@ -80,6 +81,8 @@ class AppRouter {
         return MaterialPageRoute(builder: (_) => const GalleryScreen());
       case receipts:
         return MaterialPageRoute(builder: (_) => const ReceiptScreen());
+      case questionPapers:
+        return MaterialPageRoute(builder: (_) => const QuestionPapersScreen());
       default:
         return MaterialPageRoute(
           builder: (_) => Scaffold(

@@ -202,11 +202,22 @@ class GalleryItemSerializer(serializers.ModelSerializer):
 
 
 class QuestionPaperSerializer(serializers.ModelSerializer):
-    standard = serializers.StringRelatedField()
+    file = serializers.SerializerMethodField()
+    solution_file = serializers.SerializerMethodField()
 
     class Meta:
         model = QuestionPaper
         fields = ['id', 'title', 'subject', 'standard', 'exam_type', 'year', 'file', 'solution_file', 'uploaded_at', 'download_count']
+
+    def get_file(self, obj):
+        if not obj.file:
+            return None
+        return obj.file.url
+
+    def get_solution_file(self, obj):
+        if not obj.solution_file:
+            return None
+        return obj.solution_file.url
 
 
 class NotificationSerializer(serializers.ModelSerializer):
@@ -227,7 +238,29 @@ class NotificationSerializer(serializers.ModelSerializer):
 
 class NoteSerializer(serializers.ModelSerializer):
     student = serializers.StringRelatedField()
+    pdf_file_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Note
-        fields = ['id', 'student', 'title', 'content', 'is_important', 'created_at', 'updated_at']
+        fields = [
+            'id',
+            'student',
+            'standard',
+            'subject',
+            'chapter',
+            'title',
+            'content',
+            'pdf_file',
+            'pdf_file_url',
+            'is_important',
+            'created_at',
+            'updated_at',
+        ]
+
+    def get_pdf_file_url(self, obj):
+        if not obj.pdf_file:
+            return None
+        request = self.context.get('request')
+        if request:
+            return request.build_absolute_uri(obj.pdf_file.url)
+        return obj.pdf_file.url

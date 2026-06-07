@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
+import 'package:vidyaniketan_app/config/api_config.dart';
 
 import 'storage_service.dart';
 
@@ -13,12 +14,13 @@ class ApiException implements Exception {
 }
 
 class ApiService {
-  static final String baseUrl = 'https://vidyaniketan-app-main-f58e2f6.kuberns.cloud/api';
+  static final List<String> _baseUrlCandidates = ApiConfig.apiBaseUrlCandidates;
+  static int _activeBaseUrlIndex = 0;
   static late Dio _dio;
 
   static void init() {
     _dio = Dio(BaseOptions(
-      baseUrl: baseUrl,
+      baseUrl: _baseUrlCandidates.first,
       connectTimeout: const Duration(seconds: 30),
       receiveTimeout: const Duration(seconds: 30),
       headers: {'Content-Type': 'application/json'},
@@ -35,11 +37,13 @@ class ApiService {
         return handler.next(options);
       },
       onResponse: (response, handler) {
-        print('API Response: ${response.statusCode} for ${response.requestOptions.uri}');
+        print(
+            'API Response: ${response.statusCode} for ${response.requestOptions.uri}');
         return handler.next(response);
       },
       onError: (error, handler) async {
-        print('API Error: ${error.type} ${error.message} for ${error.requestOptions.uri}');
+        print(
+            'API Error: ${error.type} ${error.message} for ${error.requestOptions.uri}');
         if (error.response?.statusCode == 401) {
           final refreshed = await _refreshToken();
           if (refreshed) {
@@ -66,12 +70,20 @@ class ApiService {
     ));
   }
 
+  static String get activeBaseUrl {
+    final baseUrl = _dio.options.baseUrl;
+    if (baseUrl.endsWith('/api')) {
+      return baseUrl.substring(0, baseUrl.length - 4);
+    }
+    return baseUrl;
+  }
+
   static Future<bool> _refreshToken() async {
     final refresh = StorageService.getRefreshToken();
     if (refresh == null) return false;
     try {
       final response = await Dio().post(
-        '$baseUrl/auth/refresh/',
+        '${_dio.options.baseUrl}/auth/refresh/',
         data: {'refresh': refresh},
       );
       await StorageService.saveTokens(
@@ -109,6 +121,9 @@ class ApiService {
       print('ApiService: GET response data: $result');
       return result;
     } on DioException catch (e) {
+      if (_isConnectionIssue(e) && _switchToNextBaseUrl()) {
+        return get(endpoint, params: params);
+      }
       print('ApiService: GET error: ${e.message}');
       throw _handleError(e);
     }
@@ -120,14 +135,45 @@ class ApiService {
       final response = await _dio.post(endpoint, data: data);
       return _extractData(response);
     } on DioException catch (e) {
+      if (_isConnectionIssue(e) && _switchToNextBaseUrl()) {
+        return post(endpoint, data: data);
+      }
       throw _handleError(e);
     }
+  }
+
+  static bool _isConnectionIssue(DioException e) {
+    return e.type == DioExceptionType.connectionError ||
+        e.type == DioExceptionType.connectionTimeout ||
+        e.type == DioExceptionType.receiveTimeout ||
+        e.type == DioExceptionType.unknown;
+  }
+
+  static bool _switchToNextBaseUrl() {
+    final nextIndex = _activeBaseUrlIndex + 1;
+    if (nextIndex >= _baseUrlCandidates.length) {
+      return false;
+    }
+
+    _activeBaseUrlIndex = nextIndex;
+    _dio.options.baseUrl = _baseUrlCandidates[_activeBaseUrlIndex];
+    debugPrint('ApiService: switched base URL to ${_dio.options.baseUrl}');
+    return true;
   }
 
   static ApiException _handleError(DioException e) {
     if (e.type == DioExceptionType.connectionTimeout ||
         e.type == DioExceptionType.receiveTimeout) {
       return ApiException('Connection timed out. Please check your internet.');
+    }
+    if (e.type == DioExceptionType.badCertificate) {
+      return ApiException(
+          'Secure connection failed. Please verify server SSL certificate.');
+    }
+    if (e.type == DioExceptionType.connectionError ||
+        e.type == DioExceptionType.unknown) {
+      return ApiException(
+          'Unable to reach server. Check backend URL or DNS/network access.');
     }
     if (e.response != null) {
       final data = e.response!.data;
@@ -142,7 +188,7 @@ class ApiService {
       }
       return ApiException(message, statusCode: e.response!.statusCode);
     }
-    return ApiException('No internet connection.');
+    return ApiException('Unable to connect to backend server.');
   }
 
   static Future<Map<String, dynamic>> login(
@@ -168,11 +214,13 @@ class ApiService {
   }
 
   static Future<Map<String, dynamic>> getAttendanceSummary({int? year}) async {
-    return get('/attendance/summary/', params: year != null ? {'year': year} : null);
+    return get('/attendance/summary/',
+        params: year != null ? {'year': year} : null);
   }
 
   static Future<List<dynamic>> getMonthlyAttendance(int month, int year) async {
-    final data = await get('/attendance/monthly/', params: {'month': month, 'year': year});
+    final data = await get('/attendance/monthly/',
+        params: {'month': month, 'year': year});
     final attendanceData = data['attendance'] ?? data['data'] ?? [];
     return List<dynamic>.from(attendanceData);
   }
@@ -210,7 +258,8 @@ class ApiService {
     return List<dynamic>.from(data['results'] ?? []);
   }
 
-  static Future<List<dynamic>> getNotes({int? subject, int? chapter, String? type}) async {
+  static Future<List<dynamic>> getNotes(
+      {int? subject, int? chapter, String? type}) async {
     final params = <String, dynamic>{};
     if (subject != null) params['subject'] = subject;
     if (chapter != null) params['chapter'] = chapter;
@@ -245,7 +294,8 @@ class ApiService {
   }
 
   static Future<List<dynamic>> getTeachers({String? search}) async {
-    final data = await get('/teachers/', params: search != null ? {'search': search} : null);
+    final data = await get('/teachers/',
+        params: search != null ? {'search': search} : null);
     return List<dynamic>.from(data['results'] ?? []);
   }
 
@@ -256,7 +306,7 @@ class ApiService {
     if (year != null) params['year'] = year;
     if (examType != null) params['exam_type'] = examType;
     final data = await get('/question-papers/', params: params);
-    return List<dynamic>.from(data['results'] ?? []);
+    return _getListData(data);
   }
 
   static Future<List<dynamic>> getNotifications() async {
@@ -272,9 +322,23 @@ class ApiService {
     await post('/notifications/mark_all_read/');
   }
 
-  static Future<List<dynamic>> getNotesList() async {
-    final data = await get('/notes/');
-    return List<dynamic>.from(data['results'] ?? []);
+  static Future<List<dynamic>> getNotesList({
+    String? subject,
+    String? chapter,
+  }) async {
+    final params = <String, dynamic>{};
+    if (subject != null && subject.trim().isNotEmpty) {
+      params['subject'] = subject.trim();
+    }
+    if (chapter != null && chapter.trim().isNotEmpty) {
+      params['chapter'] = chapter.trim();
+    }
+
+    final data = await get(
+      '/notes/',
+      params: params.isEmpty ? null : params,
+    );
+    return _getListData(data);
   }
 
   static Future<List<dynamic>> getReceipts() async {

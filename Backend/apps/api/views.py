@@ -16,6 +16,7 @@ from apps.lectures.models import RecordedLecture
 from apps.notifications.models import Notification, NotificationRead
 from apps.results.models import Exam, Mark
 from apps.students.models import Student
+from apps.students.models import StandardFeatureAccess
 from apps.study_material.models import QuestionPaper, Note
 from apps.api.serializers import (
     AttendanceSerializer,
@@ -34,6 +35,26 @@ from apps.api.serializers import (
     RecordedLectureSerializer,
     StudentSerializer,
 )
+
+
+def _get_student_feature_access(student):
+    notes_enabled = True
+    question_papers_enabled = True
+
+    standard = str(getattr(student, 'standard', '') or '').strip()
+    if standard:
+        standard_config = StandardFeatureAccess.objects.filter(standard=standard).first()
+        if standard_config:
+            notes_enabled = standard_config.notes_enabled
+            question_papers_enabled = standard_config.question_papers_enabled
+
+    notes_enabled = notes_enabled and getattr(student, 'notes_access_enabled', True)
+    question_papers_enabled = question_papers_enabled and getattr(student, 'question_papers_access_enabled', True)
+
+    return {
+        'notes': notes_enabled,
+        'question_papers': question_papers_enabled,
+    }
 
 
 @api_view(['GET'])
@@ -174,7 +195,47 @@ class QuestionPaperViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = QuestionPaperSerializer
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
-    queryset = QuestionPaper.objects.all()
+
+    def list(self, request, *args, **kwargs):
+        user = request.user
+        if user.role == User.STUDENT and hasattr(user, 'student_profile'):
+            access = _get_student_feature_access(user.student_profile)
+            if not access['question_papers']:
+                return Response(
+                    {'detail': 'Question papers are disabled for your account. Please contact admin.'},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+        return super().list(request, *args, **kwargs)
+
+    def get_queryset(self):
+        user = self.request.user
+
+        if user.role == User.STUDENT and hasattr(user, 'student_profile'):
+            access = _get_student_feature_access(user.student_profile)
+            if not access['question_papers']:
+                return QuestionPaper.objects.none()
+
+            student_standard = str(user.student_profile.standard or '').strip()
+            student_digits = ''.join(ch for ch in student_standard if ch.isdigit())
+            standard_candidates = {
+                student_standard,
+                f'{student_standard}th',
+                f'{student_standard}th Standard',
+                f'{student_standard} Standard',
+            }
+            standard_candidates = {value for value in standard_candidates if value}
+
+            filters = Q(standard__in=standard_candidates) | Q(standard__iexact=student_standard)
+            if student_digits:
+                filters = (
+                    filters |
+                    Q(standard__startswith=student_digits) |
+                    Q(standard__istartswith=f'{student_digits}th')
+                )
+
+            return QuestionPaper.objects.filter(filters).distinct()
+
+        return QuestionPaper.objects.all()
 
 
 class StudentDashboardView(RetrieveUpdateAPIView):
@@ -212,6 +273,50 @@ class StudentDashboardView(RetrieveUpdateAPIView):
             FeeReceipt.objects.filter(fee__student=student).order_by('-payment_date')[:5],
             many=True,
         ).data
+        note_standard = str(student.standard or '').strip()
+        note_standard_candidates = {
+            note_standard,
+            f'{note_standard}th',
+            f'{note_standard}th Standard',
+            f'{note_standard} Standard',
+        }
+        note_standard_candidates = {value for value in note_standard_candidates if value}
+
+        feature_access = _get_student_feature_access(student)
+
+        if feature_access['notes']:
+            recent_notes = NoteSerializer(
+                Note.objects.filter(
+                    Q(standard__in=note_standard_candidates) |
+                    Q(standard__iexact=note_standard)
+                ).order_by('-is_important', '-updated_at')[:5],
+                many=True,
+                context={'request': request},
+            ).data
+        else:
+            recent_notes = []
+
+        if feature_access['question_papers']:
+            paper_filters = Q(standard__in=note_standard_candidates) | Q(standard__iexact=note_standard)
+            if note_standard:
+                paper_filters = (
+                    paper_filters |
+                    Q(standard__startswith=note_standard) |
+                    Q(standard__istartswith=f'{note_standard}th')
+                )
+            recent_question_papers = QuestionPaperSerializer(
+                QuestionPaper.objects.filter(paper_filters)
+                .order_by('-uploaded_at')[:5],
+                many=True,
+                context={'request': request},
+            ).data
+        else:
+            recent_question_papers = []
+        recent_lectures = RecordedLectureSerializer(
+            RecordedLecture.objects.filter(is_active=True).order_by('-uploaded_at')[:5],
+            many=True,
+            context={'request': request},
+        ).data
         recent_gallery = GalleryItemSerializer(
             GalleryItem.objects.all().order_by('-uploaded_at')[:10],
             many=True,
@@ -231,6 +336,7 @@ class StudentDashboardView(RetrieveUpdateAPIView):
             'standard_display': student.get_standard_display(),
             'school_name': student.school_name,
             'profile_photo_url': profile_photo_url,
+            'feature_access': feature_access,
             'mobile_number': student.mobile_number,
             'date_of_birth': student.date_of_birth,
             'gender': student.gender,
@@ -243,6 +349,9 @@ class StudentDashboardView(RetrieveUpdateAPIView):
                 'unread_notifications': unread_notifications,
                 'unpaid_fees_count': unpaid_fees_count,
             },
+            'recent_notes': recent_notes,
+            'recent_question_papers': recent_question_papers,
+            'recent_lectures': recent_lectures,
             'recent_fees': recent_fees,
             'recent_receipts': recent_receipts,
             'recent_gallery': recent_gallery,
@@ -462,9 +571,47 @@ class NotesView(ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = NoteSerializer
 
+    def list(self, request, *args, **kwargs):
+        student = request.user.student_profile
+        access = _get_student_feature_access(student)
+        if not access['notes']:
+            return Response(
+                {'detail': 'Chapter-wise notes are disabled for your account. Please contact admin.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        return super().list(request, *args, **kwargs)
+
     def get_queryset(self):
         student = self.request.user.student_profile
-        return Note.objects.filter(student=student)
+        access = _get_student_feature_access(student)
+        if not access['notes']:
+            return Note.objects.none()
+
+        subject = self.request.query_params.get('subject')
+        chapter = self.request.query_params.get('chapter')
+        student_standard = str(student.standard or '').strip()
+
+        standard_candidates = {
+            student_standard,
+            f'{student_standard}th',
+            f'{student_standard}th Standard',
+            f'{student_standard} Standard',
+        }
+
+        # Keep only non-empty candidates to avoid broad matches.
+        standard_candidates = {value for value in standard_candidates if value}
+
+        queryset = Note.objects.filter(
+            Q(standard__in=standard_candidates) |
+            Q(standard__iexact=student_standard)
+        ).order_by('-is_important', '-updated_at')
+
+        if subject:
+            queryset = queryset.filter(subject__iexact=subject)
+        if chapter:
+            queryset = queryset.filter(chapter__iexact=chapter)
+
+        return queryset
 
 
 class FeeReceiptsView(ListAPIView):

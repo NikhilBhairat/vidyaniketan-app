@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.utils.html import format_html
 from django.db.models import Count
-from .models import Student
+from .models import Student, StandardFeatureAccess
 from project.admin_site import vidyaniketan_admin_site
 
 
@@ -30,6 +30,11 @@ class StudentAdmin(admin.ModelAdmin):
             'fields': ('admission_date', 'receive_admin_alerts', 'is_active'),
             'classes': ('collapse',),
         }),
+        ('Feature Access Control', {
+            'fields': ('notes_access_enabled', 'question_papers_access_enabled'),
+            'description': 'Control access for this student account. You can use this when fees are pending.',
+            'classes': ('wide',),
+        }),
     )
 
     def gender_badge(self, obj):
@@ -51,3 +56,11 @@ class StudentAdmin(admin.ModelAdmin):
 
 # Register with custom admin site
 vidyaniketan_admin_site.register(Student, StudentAdmin)
+
+
+@admin.register(StandardFeatureAccess, site=vidyaniketan_admin_site)
+class StandardFeatureAccessAdmin(admin.ModelAdmin):
+    list_display = ['standard', 'notes_enabled', 'question_papers_enabled']
+    list_filter = ['standard', 'notes_enabled', 'question_papers_enabled']
+    search_fields = ['standard']
+    ordering = ['standard']

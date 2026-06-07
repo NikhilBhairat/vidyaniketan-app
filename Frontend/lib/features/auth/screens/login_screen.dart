@@ -199,6 +199,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   label: 'Mobile Number',
                   icon: Icons.phone_android_rounded,
                   keyboardType: TextInputType.phone,
+                  textInputAction: TextInputAction.next,
                 ),
 
                 const SizedBox(height: 22),
@@ -271,10 +272,12 @@ class _LoginScreenState extends State<LoginScreen> {
     required String label,
     required IconData icon,
     TextInputType? keyboardType,
+    TextInputAction? textInputAction,
   }) {
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
+      textInputAction: textInputAction,
       style: const TextStyle(color: Colors.white),
       decoration: InputDecoration(
         labelText: label,
@@ -305,6 +308,13 @@ class _LoginScreenState extends State<LoginScreen> {
     return TextFormField(
       controller: _passwordCtrl,
       obscureText: _obscurePassword,
+      textInputAction: TextInputAction.done,
+      onFieldSubmitted: (_) {
+        final isLoading = context.read<AuthProvider>().isLoading;
+        if (!isLoading) {
+          _login();
+        }
+      },
       style: const TextStyle(color: Colors.white),
       decoration: InputDecoration(
         labelText: 'Password',

@@ -161,9 +161,9 @@ select option {
 }
 
 select option:checked {
-  background: linear-gradient(#2563eb, #2563eb);
-  background-color: #2563eb !important;
-  color: #ffffff !important;
+  background: #eef2ff;
+  background-color: #eef2ff !important;
+  color: var(--text-primary) !important;
 }
 
 input:focus, select:focus, textarea:focus {
@@ -553,4 +553,98 @@ button {
 .badge-contact {
   background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
   color: #1e40af;
+}
+
+/* Premium, high-contrast tab styling */
+.nav-tabs,
+ul.tabs,
+.tabs,
+.tabbed,
+.tab-row,
+.ui-tabs-nav {
+  background: linear-gradient(135deg, #e2e8f0 0%, #f8fafc 100%) !important;
+  border: 1px solid rgba(100, 116, 139, 0.25) !important;
+  border-radius: 12px !important;
+  padding: 6px !important;
+  display: flex;
+  gap: 6px;
+}
+
+.nav-tabs li,
+ul.tabs li,
+.tabs li,
+.tabbed li,
+.tab-row li,
+.ui-tabs-nav li {
+  list-style: none;
+  margin: 0;
+}
+
+.nav-tabs li a,
+ul.tabs li a,
+.tabs li a,
+.tabbed li a,
+.tab-row li a,
+.ui-tabs-nav li a,
+.selector .selector-available h2,
+.selector .selector-chosen h2 {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 0.55rem 0.95rem !important;
+  border-radius: 10px !important;
+  border: 1px solid transparent !important;
+  background: #f8fafc !important;
+  color: #0f172a !important;
+  font-weight: 600 !important;
+  text-decoration: none !important;
+  transition: all 0.2s ease;
+}
+
+.nav-tabs li a:hover,
+ul.tabs li a:hover,
+.tabs li a:hover,
+.tabbed li a:hover,
+.tab-row li a:hover,
+.ui-tabs-nav li a:hover,
+.selector .selector-available h2:hover,
+.selector .selector-chosen h2:hover {
+  background: #e2e8f0 !important;
+  color: #0b1220 !important;
+  border-color: rgba(37, 99, 235, 0.35) !important;
+}
+
+.nav-tabs li.active a,
+.nav-tabs li.current a,
+.nav-tabs li.selected a,
+ul.tabs li.active a,
+ul.tabs li.current a,
+ul.tabs li.selected a,
+.tabs li.active a,
+.tabs li.current a,
+.tabs li.selected a,
+.tabbed li.active a,
+.tabbed li.current a,
+.tabbed li.selected a,
+.tab-row li.active a,
+.tab-row li.current a,
+.tab-row li.selected a,
+.ui-tabs-nav li.ui-tabs-active a,
+[role="tab"][aria-selected="true"] {
+  background: linear-gradient(135deg, #1d4ed8 0%, #1e3a8a 100%) !important;
+  color: #ffffff !important;
+  border-color: rgba(30, 58, 138, 0.8) !important;
+  box-shadow: 0 8px 18px rgba(30, 58, 138, 0.22);
+}
+
+.nav-tabs li a:focus,
+ul.tabs li a:focus,
+.tabs li a:focus,
+.tabbed li a:focus,
+.tab-row li a:focus,
+.ui-tabs-nav li a:focus,
+[role="tab"]:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.28) !important;
 }
