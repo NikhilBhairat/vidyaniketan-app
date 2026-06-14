@@ -2,6 +2,7 @@ from datetime import timedelta
 from pathlib import Path
 import os
 
+# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # ----------------------------
@@ -13,31 +14,34 @@ SECRET_KEY = os.environ.get(
     "django-insecure-change-this-in-production"
 )
 
+# Debug will automatically be False on Render unless you set an environment variable DEBUG=True
 DEBUG = os.environ.get("DEBUG", "False").lower() in ("true", "1", "yes")
 
+# Wildcard '*' allows Render internal health checks and external Flutter apps to connect seamlessly
 ALLOWED_HOSTS = [
-    # "vidyaniketan-app-main-f58e2f6.kuberns.cloud",
-    "vidyaniketan-app-2.onrender.com",
+    "://onrender.com",
     "127.0.0.1",
     "localhost",
     "10.0.2.2",  # For Android emulator
+    "*",
 ]
 
-CSRF_COOKIE_SECURE = False  # Allow HTTP in development
+CSRF_COOKIE_SECURE = False  # Set to True later if enforcing strict HTTPS exclusively
 SESSION_COOKIE_SECURE = False
 
 CSRF_COOKIE_SAMESITE = "Lax"
 SESSION_COOKIE_SAMESITE = "Lax"
 
+# Trusted origins specifically updated to reflect your active Render domain name
 CSRF_TRUSTED_ORIGINS = [
-    "https://vidyaniketan-app-main-f58e2f6.kuberns.cloud",
-    "http://vidyaniketan-app-main-f58e2f6.kuberns.cloud",
+    "https://://onrender.com",
+    "http://://onrender.com",
     "http://localhost:8000",
     "http://127.0.0.1:8000",
-    "http://10.0.2.2:8000",  # Android emulator
+    "http://10.0.2.2:8000",  
 ]
 
-# IMPORTANT for Kubernetes / reverse proxy (CSRF fix)
+# Important reverse proxy headers for proper SSL handshaking on Render
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 USE_X_FORWARDED_HOST = True
 SECURE_SSL_REDIRECT = False
@@ -76,23 +80,18 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-
-    # WhiteNoise for static files (FIX ADMIN CSS/JS)
-    "whitenoise.middleware.WhiteNoiseMiddleware",
-
+    "whitenoise.middleware.WhiteNoiseMiddleware",  # Handles static file delivery natively on Render
     "corsheaders.middleware.CorsMiddleware",
-
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
-
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
 # ----------------------------
-# CORS (OK for now, tighten later)
+# CORS
 # ----------------------------
 
 CORS_ALLOW_ALL_ORIGINS = True
@@ -175,9 +174,12 @@ USE_TZ = True
 
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
-STATICFILES_DIRS = [BASE_DIR / "static"]
 
-# WhiteNoise storage (IMPORTANT)
+# Safe checking fallback prevents build failures if local global static asset folder does not exist
+if os.path.exists(BASE_DIR / "static"):
+    STATICFILES_DIRS = [BASE_DIR / "static"]
+
+# Gzip compresses and assets managed seamlessly by WhiteNoise
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # ----------------------------
