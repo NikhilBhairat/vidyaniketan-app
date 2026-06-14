@@ -16,7 +16,8 @@ SECRET_KEY = os.environ.get(
 DEBUG = os.environ.get("DEBUG", "False").lower() in ("true", "1", "yes")
 
 ALLOWED_HOSTS = [
-    "vidyaniketan-app-main-f58e2f6.kuberns.cloud",
+    # "vidyaniketan-app-main-f58e2f6.kuberns.cloud",
+    "vidyaniketan-app-2.onrender.com",
     "127.0.0.1",
     "localhost",
     "10.0.2.2",  # For Android emulator
