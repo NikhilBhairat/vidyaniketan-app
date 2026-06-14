@@ -9,7 +9,10 @@
     </domain-config>
     
     <!-- HTTPS configuration for production -->
-    <domain-config cleartextTrafficPermitted="false">
+    <domain-config cleartextTrafficPermitted="true">
+        <!-- <domain includeSubdomains="true">vidyaniketan-app-main-f58e2f6.kuberns.cloud</domain> -->
+        <domain includeSubdomains="true">://onrender.com</domain>
         <domain includeSubdomains="true">vidyaniketan-app-main-f58e2f6.kuberns.cloud</domain>
+    </domain-config>
     </domain-config>
 </network-security-config>
