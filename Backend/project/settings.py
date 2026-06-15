@@ -19,7 +19,7 @@ DEBUG = os.environ.get("DEBUG", "False").lower() in ("true", "1", "yes")
 
 # Wildcard '*' allows Render internal health checks and external Flutter apps to connect seamlessly
 ALLOWED_HOSTS = [
-    "://onrender.com",
+    "vidyaniketan-app-2.onrender.com",  # Your exact domain name
     "127.0.0.1",
     "localhost",
     "10.0.2.2",  # For Android emulator
@@ -32,10 +32,10 @@ SESSION_COOKIE_SECURE = False
 CSRF_COOKIE_SAMESITE = "Lax"
 SESSION_COOKIE_SAMESITE = "Lax"
 
-# Trusted origins specifically updated to reflect your active Render domain name
+# Trusted origins specifically updated to reflect your active Render domain name without typos
 CSRF_TRUSTED_ORIGINS = [
-    "https://://onrender.com",
-    "http://://onrender.com",
+    "https://onrender.com",
+    "http://onrender.com",
     "http://localhost:8000",
     "http://127.0.0.1:8000",
     "http://10.0.2.2:8000",  
