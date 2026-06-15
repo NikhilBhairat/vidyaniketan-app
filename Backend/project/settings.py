@@ -34,8 +34,8 @@ SESSION_COOKIE_SAMESITE = "Lax"
 
 # Trusted origins specifically updated to reflect your active Render domain name without typos
 CSRF_TRUSTED_ORIGINS = [
-    "https://onrender.com",
-    "http://onrender.com",
+    "https://vidyaniketan-app-2.onrender.com",
+    "http://vidyaniketan-app-2.onrender.com",
     "http://localhost:8000",
     "http://127.0.0.1:8000",
     "http://10.0.2.2:8000",  

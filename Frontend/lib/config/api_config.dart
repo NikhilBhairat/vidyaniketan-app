@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 class ApiConfig {
   // Primary URL - Production Render (UPDATED FOR YOUR LIVE BACKEND)
   static const String _productionUrl =
-      'https://onrender.com';
+      'https://vidyaniketan-app-2.onrender.com';
 
   // Optional runtime override: flutter run --dart-define=API_BASE_URL=https://example.com
   static const String _runtimeBaseUrl =

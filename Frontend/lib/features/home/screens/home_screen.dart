@@ -44,7 +44,7 @@ String? _resolveProfilePhotoUrl(Map<String, dynamic> data) {
 
   final absoluteUri = Uri.tryParse(absoluteUrl);
   if (absoluteUri != null &&
-      absoluteUri.host == 'vidyaniketan-app-main-f58e2f6.kuberns.cloud' &&
+      absoluteUri.host == 'vidyaniketan-app-2.onrender.com' &&
       absoluteUri.scheme == 'http') {
     absoluteUrl = absoluteUri.replace(scheme: 'https').toString();
   }
