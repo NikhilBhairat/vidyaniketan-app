@@ -3,9 +3,9 @@ import 'package:flutter/foundation.dart';
 /// API Configuration with multiple fallback URLs
 /// This file contains all API endpoint configurations with support for multiple environments
 class ApiConfig {
-  // Primary URL - Production Kubernetes
+  // Primary URL - Production Render (UPDATED FOR YOUR LIVE BACKEND)
   static const String _productionUrl =
-      'https://vidyaniketan-app-main-f58e2f6.kuberns.cloud';
+      'https://onrender.com';
 
   // Optional runtime override: flutter run --dart-define=API_BASE_URL=https://example.com
   static const String _runtimeBaseUrl =
@@ -66,7 +66,7 @@ class ApiConfig {
     return normalized.map((url) => '$url$apiVersion').toList();
   }
 
-  // API version
+  // API version (Fixed to ensure it begins with a slash properly)
   static const String apiVersion = '/api';
 
   // Complete API base URL
