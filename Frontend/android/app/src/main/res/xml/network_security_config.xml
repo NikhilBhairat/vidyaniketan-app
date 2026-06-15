@@ -8,10 +8,9 @@
         <domain includeSubdomains="true">127.0.0.1</domain>
     </domain-config>
     
-    <!-- HTTPS configuration for production -->
+    <!-- HTTPS configuration for production - ALLOW NEW RENDER APP -->
     <domain-config cleartextTrafficPermitted="true">
         <domain includeSubdomains="true">://onrender.com</domain>
         <domain includeSubdomains="true">vidyaniketan-app-main-f58e2f6.kuberns.cloud</domain>
-    </domain-config>
     </domain-config>
 </network-security-config>
