@@ -621,8 +621,9 @@ class _DashboardPageState extends State<DashboardPage> {
     tabs.add(const Tab(text: 'Fees'));
     views.add(_buildQuickFeesTab());
 
-    tabs.add(const Tab(text: 'Gallery'));
-    views.add(_buildQuickGalleryTab());
+    // Gallery hidden from Quick Access for now.
+    // tabs.add(const Tab(text: 'Gallery'));
+    // views.add(_buildQuickGalleryTab());
 
     tabs.add(const Tab(text: 'Receipts'));
     views.add(_buildQuickReceiptsTab());
@@ -667,7 +668,7 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   int _quickAccessTabCount() {
-    int total = 5; // lectures, results, fees, gallery, receipts
+    int total = 4; // lectures, results, fees, receipts
     if (_isFeatureEnabled('notes')) total += 1;
     if (_isFeatureEnabled('question_papers')) total += 1;
     return total;
