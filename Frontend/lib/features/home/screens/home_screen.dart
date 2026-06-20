@@ -965,6 +965,28 @@ class _DashboardPageState extends State<DashboardPage> {
     return null;
   }
 
+  Future<void> _openLecture(Map<String, dynamic> lecture) async {
+    final rawSource = _pickLectureSource(lecture);
+    final videoUrl = _resolveLectureUrl(rawSource);
+    if (videoUrl == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No playable link found for this lecture.')),
+      );
+      return;
+    }
+
+    final opened = await launchUrlString(
+      videoUrl,
+      mode: LaunchMode.externalApplication,
+    );
+    if (!opened && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Unable to open lecture link.')),
+      );
+    }
+  }
+
   Widget _buildQuickLecturesTab() {
     final lectures =
         List<dynamic>.from(_dashboardData?['recent_lectures'] ?? []);
@@ -1019,28 +1041,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                onTap: () async {
-                  final rawSource = _pickLectureSource(lecture);
-                  final videoUrl = _resolveLectureUrl(rawSource);
-                  if (videoUrl == null) {
-                    if (!mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content:
-                              Text('No playable link found for this lecture.')),
-                    );
-                    return;
-                  }
-
-                  if (await canLaunchUrlString(videoUrl)) {
-                    await launchUrlString(videoUrl);
-                  } else if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content: Text('Unable to open lecture link.')),
-                    );
-                  }
-                },
+                onTap: () => _openLecture(lecture),
               );
             },
           ),
