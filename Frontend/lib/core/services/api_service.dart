@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:vidyaniketan_app/config/api_config.dart';
 
 import 'storage_service.dart';
@@ -211,6 +212,29 @@ class ApiService {
 
   static Future<Map<String, dynamic>> getProfile() async {
     return get('/auth/profile/');
+  }
+
+  static Future<void> updateProfilePhoto(XFile photoFile) async {
+    try {
+      final bytes = await photoFile.readAsBytes();
+      final formData = FormData.fromMap({
+        'profile_photo': MultipartFile.fromBytes(
+          bytes,
+          filename: photoFile.name,
+        ),
+      });
+
+      await _dio.patch(
+        '/student/dashboard/',
+        data: formData,
+        options: Options(contentType: 'multipart/form-data'),
+      );
+    } on DioException catch (e) {
+      if (_isConnectionIssue(e) && _switchToNextBaseUrl()) {
+        return updateProfilePhoto(photoFile);
+      }
+      throw _handleError(e);
+    }
   }
 
   static Future<Map<String, dynamic>> getAttendanceSummary({int? year}) async {

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 import 'package:vidyaniketan_app/config/api_config.dart';
@@ -374,6 +376,8 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Widget _buildStats() {
     final stats = _dashboardData?['quick_stats'] ?? {};
+    final attendanceValue =
+        ((stats['attendance_percentage'] as num?) ?? 0).round();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -382,7 +386,7 @@ class _DashboardPageState extends State<DashboardPage> {
         const SizedBox(height: 12),
         Row(
           children: [
-            _statCard('Attendance', '${stats['attendance_percentage'] ?? 0}%'),
+            _statCard('Attendance', '$attendanceValue%'),
             const SizedBox(width: 12),
             _statCard('Fees due', '₹${stats['fees_due_amount'] ?? 0}'),
             const SizedBox(width: 12),
@@ -1134,7 +1138,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('Attendance Summary',
+                                Text(
+                                  'Attendance Summary (${_selectedMonth.year})',
                                   style: TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold)),
@@ -1143,8 +1148,10 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                                   'Present: ${_summary!['present_days'] ?? '-'}'),
                               Text(
                                   'Absent: ${_summary!['absent_days'] ?? '-'}'),
+                                Text(
+                                  'Total: ${_summary!['total_days'] ?? '-'}'),
                               Text(
-                                  'Attendance : ${(_summary!['attendance_percentage'] ?? 0).round()}%'),
+                                  'Attendance: ${_summary!['attendance_percentage'] ?? 0}%'),
                             ],
                           ),
                         ),
@@ -1435,6 +1442,8 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   Map<String, dynamic>? _studentData;
   bool _isLoading = true;
+  bool _isUploadingPhoto = false;
+  final ImagePicker _imagePicker = ImagePicker();
 
   @override
   void initState() {
@@ -1452,6 +1461,50 @@ class _ProfileScreenState extends State<ProfileScreen> {
     setState(() => _isLoading = false);
   }
 
+  Future<void> _changeProfilePhoto() async {
+    if (_isUploadingPhoto) return;
+
+    try {
+      final picked = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 85,
+      );
+
+      if (picked == null) return;
+
+      setState(() => _isUploadingPhoto = true);
+      await ApiService.updateProfilePhoto(picked);
+      await _loadProfile();
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Profile photo updated successfully')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Unable to update profile photo: $e')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isUploadingPhoto = false);
+      }
+    }
+  }
+
+  Future<void> _contactClassOnWhatsApp() async {
+    const whatsappUrl = 'https://wa.me/919764451714';
+    final opened = await launchUrlString(
+      whatsappUrl,
+      mode: LaunchMode.externalApplication,
+    );
+    if (!opened && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Unable to open WhatsApp.')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -1459,6 +1512,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
       appBar: AppBar(
         title: const Text('Profile'),
         actions: [
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: TextButton.icon(
+              onPressed: _contactClassOnWhatsApp,
+              icon: const FaIcon(
+                FontAwesomeIcons.whatsapp,
+                size: 16,
+                color: Color(0xFF25D366),
+              ),
+              label: const Text('Contact to Class'),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.white,
+                textStyle: const TextStyle(fontSize: 12),
+                visualDensity: VisualDensity.compact,
+              ),
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () async {
@@ -1507,14 +1577,44 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       child: Row(
         children: [
-          CircleAvatar(
-            radius: 40,
-            backgroundColor: Colors.white24,
-            backgroundImage:
-                profilePhotoUrl != null ? NetworkImage(profilePhotoUrl) : null,
-            child: profilePhotoUrl == null
-                ? const Icon(Icons.person, size: 40, color: Colors.white)
-                : null,
+          Stack(
+            children: [
+              CircleAvatar(
+                radius: 40,
+                backgroundColor: Colors.white24,
+                backgroundImage: profilePhotoUrl != null
+                    ? NetworkImage(profilePhotoUrl)
+                    : null,
+                child: profilePhotoUrl == null
+                    ? const Icon(Icons.person, size: 40, color: Colors.white)
+                    : null,
+              ),
+              Positioned(
+                right: -2,
+                bottom: -2,
+                child: Material(
+                  color: Colors.white,
+                  shape: const CircleBorder(),
+                  child: IconButton(
+                    iconSize: 18,
+                    constraints: const BoxConstraints.tightFor(
+                      width: 30,
+                      height: 30,
+                    ),
+                    padding: EdgeInsets.zero,
+                    onPressed:
+                        _isUploadingPhoto ? null : _changeProfilePhoto,
+                    icon: _isUploadingPhoto
+                        ? const SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.edit, color: Color(0xFF1A237E)),
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(width: 16),
           Expanded(

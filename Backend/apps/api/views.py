@@ -57,6 +57,20 @@ def _get_student_feature_access(student):
     }
 
 
+def _build_attendance_summary(queryset):
+    present_count = queryset.filter(status='P').count()
+    absent_count = queryset.filter(status='A').count()
+    total_count = queryset.count()
+    percentage = (present_count / total_count * 100) if total_count > 0 else 0
+
+    return {
+        'present_days': present_count,
+        'absent_days': absent_count,
+        'total_days': total_count,
+        'attendance_percentage': round(percentage, 1),
+    }
+
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def dashboard_stats(request):
@@ -251,12 +265,10 @@ class StudentDashboardView(RetrieveUpdateAPIView):
             student = self.get_object()
         except:
             return Response({'error': 'Student profile not found'}, status=status.HTTP_404_NOT_FOUND)
-        
-        attendance_stats = Attendance.objects.filter(student=student).aggregate(
-            present_count=Count('id', filter=Q(status='P')),
-            total_count=Count('id'),
+
+        attendance_summary = _build_attendance_summary(
+            Attendance.objects.filter(student=student)
         )
-        attendance_percentage = (attendance_stats['present_count'] / attendance_stats['total_count'] * 100) if attendance_stats['total_count'] > 0 else 0
 
         unpaid_fees_count = Fee.objects.filter(student=student, status='unpaid').count()
         unpaid_fees_balance = Fee.objects.filter(student=student).aggregate(
@@ -344,7 +356,7 @@ class StudentDashboardView(RetrieveUpdateAPIView):
             'address': student.address,
             'admission_date': student.admission_date,
             'quick_stats': {
-                'attendance_percentage': round(attendance_percentage, 1),
+                'attendance_percentage': attendance_summary['attendance_percentage'],
                 'fees_due_amount': unpaid_fees_balance,
                 'unread_notifications': unread_notifications,
                 'unpaid_fees_count': unpaid_fees_count,
@@ -370,19 +382,7 @@ class AttendanceSummaryView(ListAPIView):
         return Attendance.objects.filter(student=student, date__year=year)
 
     def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
-        present_count = queryset.filter(status='P').count()
-        absent_count = queryset.filter(status='A').count()
-        total_count = queryset.count()
-        percentage = (present_count / total_count * 100) if total_count > 0 else 0
-
-        data = {
-            'present_days': present_count,
-            'absent_days': absent_count,
-            'total_days': total_count,
-            'attendance_percentage': round(percentage, 1),
-        }
-        return Response(data)
+        return Response(_build_attendance_summary(self.get_queryset()))
 
 
 class AttendanceMonthlyView(ListAPIView):
